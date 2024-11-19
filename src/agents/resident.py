@@ -1,7 +1,6 @@
+# resident agent representation
 from .base_agent import Agent
 from utils.register import register_class, registry
-
-# resident agent representation
 
 @register_class(alias="Agent.Resident.GPT")
 class Resident(Agent):
@@ -19,7 +18,7 @@ class Resident(Agent):
         self.system_message = "You are a resident. Here's your basic information.\n" + \
             "{}\n".format(resident_profile)
 
-        # change to any disease they have
+        # change to any random disease they have
         if "现病史" in medical_records:
             self.system_message += "<现病史> {}\n".format(medical_records["现病史"].strip())        
         if "既往史" in medical_records:
@@ -54,29 +53,9 @@ class Resident(Agent):
         parser.add_argument('--resident_frequency_penalty', type=float, default=0, help='frequency penalty')
         parser.add_argument('--resident_presence_penalty', type=float, default=0, help='presence penalty')
 
-    def speak(self, role, content, save_to_memory=True):
-        messages = [{"role": memory[0], "content": memory[1]} for memory in self.memories]
-        messages.append({"role": "user", "content": f"<{role}> {content}"})
-
-        responese = self.engine.get_response(messages)
-        
-        if save_to_memory:
-            self.memorize(("user", f"<{role}> {content}"))
-            self.memorize(("assistant", responese))
-
-        return responese
+    def speak(self):
+        pass
     
     @staticmethod
     def parse_role_content(responese):
-        responese = responese.strip()
-
-        if responese.startswith("<对医生讲>"):
-            speak_to = "医生"
-        elif responese.startswith("<对检查员讲>"):
-            speak_to = "检查员"
-        else:
-            speak_to = "医生"
-            # raise Exception("Response of PatientAgent must start with '<对医生讲>' or '<对检查员讲>', but current repsonse is: {}".format(responese))
-        responese = responese.replace("<对医生讲>", "").replace("<对检查员讲>", "").strip()
-
-        return speak_to, responese
+        pass
