@@ -12,7 +12,7 @@
 
 # GPT-3.5-Turbo
 # echo "GPT-3.5-Turbo"
-export OPENAI_API_KEY="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"
+export OPENAI_API_KEY=""
 export OPENAI_API_BASE="https://api.openai.com/v1/"
 python ../run.py --patient_database ../data/patients.json \
     --doctor Agent.Doctor.GPT --doctor_openai_model_name gpt-3.5-turbo \
