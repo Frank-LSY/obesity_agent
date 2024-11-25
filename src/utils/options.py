@@ -19,14 +19,35 @@ def get_parser():
         type=str
     )
     args, _ = parser.parse_known_args()
-
+    
     scenario_group = parser.add_argument_group(
             title="Scenario",
             description="scenario configuration",
         )
     registry.get_class(args.scenario).add_parser_args(scenario_group)
     args, _ = parser.parse_known_args()
-
+    # Add args of resident to parser.
+    if hasattr(args, "resident"):
+        resident_group = parser.add_argument_group(
+            title="Resident",
+            description="Resident configuration",
+        )
+        if registry.get_class(args.resident) is not None:
+            registry.get_class(args.resident).add_parser_args(resident_group)
+        else:
+            raise RuntimeError()
+    
+    # Add args of evaluator to parser.
+    if hasattr(args, "evaluator"):
+        evaluator_group = parser.add_argument_group(
+            title="Evaluator",
+            description="Evaluator configuration",
+        )
+        if registry.get_class(args.evaluator) is not None:
+            registry.get_class(args.evaluator).add_parser_args(evaluator_group)
+        else:
+            raise RuntimeError()
+        
     # Add args of patient to parser.
     if hasattr(args, "patient"):
         # subparsers = parser.add_subparsers(dest='class_name', required=True)

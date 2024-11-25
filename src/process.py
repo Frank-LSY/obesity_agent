@@ -7,27 +7,26 @@ from tqdm import tqdm
 import time
 import concurrent
 import random
+import pandas as pd
 from utils.register import register_class, registry
 
 
-@register_class(alias="Scenario.Consultation")
-class Consultation:
+@register_class(alias="Scenario.Process")
+class Process:
     def __init__(self, args):
-        patient_database = json.load(open(args.patient_database,encoding='utf-8'))
         self.args = args
         self.doctor = registry.get_class(args.doctor)(
             args,
         )
         
-        self.patients = []
-        for patient_profile in patient_database[:1]:
-            patient = registry.get_class(args.patient)(
+        resident_database = json.load(open(args.resident_database,encoding='utf-8'))
+        self.residents = []
+        for resident_profile in resident_database[:1]:
+            resident = registry.get_class(args.resident)(
                 args,
-                patient_profile=patient_profile["profile"],
-                medical_records=patient_profile["medical_record"],
-                patient_id=patient_profile["id"],
+                resident_profile=resident_profile,
             )
-            self.patients.append(patient)
+            self.residents.append(resident)
     
         self.reporter = registry.get_class(args.reporter)(args)
 
@@ -53,8 +52,7 @@ class Consultation:
         parser.add_argument("--patient", default="Agent.Patient.GPT", help="registry name of patient agent")
         parser.add_argument("--doctor", default="Agent.Doctor.GPT", help="registry name of doctor agent")
         parser.add_argument("--reporter", default="Agent.Reporter.GPT", help="registry name of reporter agent")
-        parser.add_argument("--resident", default="Agent.Resident.GPT", help="registry name of resident agent")
-        parser.add_argument("--evaluator", default="Agent.Evaluator.GPT", help="registry name of evaluator agent")
+
         parser.add_argument("--max_conversation_turn", default=10, type=int, help="max conversation turn between doctor and patient")
         parser.add_argument("--max_workers", default=4, type=int, help="max workers for parallel diagnosis")
         parser.add_argument("--delay_between_tasks", default=10, type=int, help="delay between tasks")

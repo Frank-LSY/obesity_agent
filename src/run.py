@@ -8,6 +8,7 @@ from utils.options import get_parser
 
 if __name__ == '__main__':
     args = get_parser()
+    print(type(args))
     scenario = registry.get_class(args.scenario)(args)
     if not args.parallel:
         scenario.run()
