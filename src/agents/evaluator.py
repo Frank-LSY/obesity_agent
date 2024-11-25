@@ -1,6 +1,7 @@
 # health evaluator of the system
 from .base_agent import Agent
 from utils.register import register_class, registry
+
 @register_class(alias="Agent.Evaluator.GPT")
 class Evaluator(Agent):
     def __init__(self, args, evaluator_info=None):
@@ -32,8 +33,15 @@ class Evaluator(Agent):
         parser.add_argument('--evaluator_frequency_penalty', type=float, default=0, help='frequency penalty')
         parser.add_argument('--evaluator_presence_penalty', type=float, default=0, help='presence penalty')
 
-    def speak(self,):
-        pass
+
+    def speak(self, content, save_to_memory=True):
+        messages = [{"role": memory[0], "content": memory[1]} for memory in self.memories]
+        messages.append({"role": "user", "content": content})
+        responese = self.engine.get_response(messages)
+        if save_to_memory:
+            self.memorize(("user", content))
+            self.memorize(("assistant", responese))
+        return responese
     
     @staticmethod
     def parse_role_content(responese):
