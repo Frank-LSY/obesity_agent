@@ -27,7 +27,6 @@ class Evaluator(Agent):
                 "5. Dietary Habits: Evaluate the dietary habits and nutritional intake.\n"
         else:
             self.system_message = evaluator_info
-
         super(Evaluator, self).__init__(engine)
 
     @staticmethod
@@ -45,15 +44,61 @@ class Evaluator(Agent):
         system_message = self.system_message + "\n" + \
             "Resident Profile:\n" + resident_profile + "\n" + \
             "Medical Records:\n" + medical_records + "\n"
-
         messages = [
             {"role": "system", "content": system_message},
             {"role": "user", "content": "Please evaluate the health condition of the resident based on the provided information."}
         ]
-
         response = self.engine.get_response(messages)
         return response
 
+    def evaluate_obesity_status(self, record):
+        score = 0
+        if 'have' in record['FOH']:
+            score += 10
+        if 'have' in record['FAVC']:
+            score += 10
+        if 'always' in record['FCVC']:
+            score -= 10
+        if '5' in record['NCP']:
+            score += 10
+        if 'always' in record['CAEC']:
+            score += 10
+        if 'not' in record['SMOKE']:
+            score -= 5
+        if 'more than 2' in record['CH2O']:
+            score -= 10
+        if 'monitor' in record['SCC']:
+            score -= 10
+        if '3' in record['FAF']:
+            score -= 10
+        if 'more than 2' in record['TUE']:
+            score += 10
+        if 'always' in record['CALC']:
+            score += 10
+        if 'Public_Transportation' in record['MTRANS']:
+            score -= 5
+
+        score = max(0, min(100, score))
+        return score
+
+    def should_go_to_doctor(self, obesity_score):
+        return obesity_score >= 70
+
+    def predict_future_status(self, record):
+        if 'have' in record['FAVC'] or 'always' in record['CAEC']:
+            return "worse"
+        if 'monitor' in record['SCC'] and '3' in record['FAF']:
+            return "better"
+        return "stable"
+
     def speak(self, resident_profile, medical_records):
         evaluation = self.evaluate_health_condition(resident_profile, medical_records)
-        return evaluation
+        obesity_score = self.evaluate_obesity_status(resident_profile)
+        doctor_recommendation = self.should_go_to_doctor(obesity_score)
+        future_status = self.predict_future_status(resident_profile)
+        return {
+            "evaluation": evaluation,
+            "obesity_score": obesity_score,
+            "should_go_to_doctor": doctor_recommendation,
+            "future_status": future_status
+        }
