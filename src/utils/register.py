@@ -11,7 +11,6 @@ class Registry:
         return self._registry.get(alias)
 
 
-# 使用装饰器来注册类，并且可以指定别名
 registry = Registry()
 
 

@@ -5,11 +5,13 @@ import hospital
 import utils
 from utils.options import get_parser
 import json
+import jsonlines
+from colorama import Fore, Style
+import os
 
-# 数据初始化
 def load_resident_profile(filepath):
     with open(filepath, encoding='utf-8') as file:
-        return json.load(file)[0]
+        return json.load(file)[235]
 
 def initialize_agents(args, resident_profile):
     evaluator = registry.get_class("Agent.Evaluator.GPT")(args)
@@ -18,43 +20,70 @@ def initialize_agents(args, resident_profile):
     return evaluator, doctor, resident
 
 def simulate_turn(dialog_history, turn, resident, evaluator, doctor):
-    # 居民生成响应
+    print(f"\n{Fore.BLUE}********** Turn {turn}: Simulation Starts **********{Style.RESET_ALL}")
+    
+    # resident basic information
     resident_response = resident.speak(dialog_history[-1]["role"], dialog_history[-1]["content"])
+    print(resident_response)
     dialog_history.append({"turn": turn, "role": "Resident", "content": resident_response})
-    # print(f"\nTurn {turn} - Resident: {resident_response}")
     
-    # 解析居民响应
-    basic_info, to_change = resident.parse_role_content(resident_response)
-    print(f"Basic Info: {basic_info}, Changes: {to_change}")
+    print(f"\n{Fore.CYAN}********* Resident **************{Style.RESET_ALL}")
+    basic_info, obesity_goal, feeling, to_change = resident.parse_role_content(resident_response)
+    print(f"{Fore.YELLOW}Basic Info:{Style.RESET_ALL} {basic_info}")
+    print(f"{Fore.YELLOW}Obesity Goal:{Style.RESET_ALL} {obesity_goal}")
+    print(f"{Fore.YELLOW}Feeling:{Style.RESET_ALL} {feeling}")
+    print(f"{Fore.YELLOW}Proposed Changes:{Style.RESET_ALL} {to_change}")
     
-    # 评估代理的分析
+    # evaluate the basic information
     evaluator_response = evaluator.speak(basic_info)
     score, trend, description, consult = evaluator.parse_role_content(evaluator_response)
-    print(f"Evaluator: {description}")
+    dialog_history.append({"turn": turn, "role": "Evaluator", "content": evaluator_response})
+    print(f"\n{Fore.CYAN}********* Evaluator **************{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}Health Score:{Style.RESET_ALL} {score}")
+    print(f"{Fore.YELLOW}Trend:{Style.RESET_ALL} {trend}")
+    print(f"{Fore.YELLOW}Evaluation Description:{Style.RESET_ALL} {description}")
+    print(f"{Fore.YELLOW}Consult Doctor? {Style.RESET_ALL}{consult}")
     
-    # 医生介入或居民自行调整
+    # doctor intervention or resident self adjustment
     if consult == 'Yes':
-        doctor_response = doctor.speak(basic_info, score)
-        doctor_to_change, instruction = doctor.parse_role_content(doctor_response)
-        print(f"Doctor Instruction: {instruction}")
+        # Pass obesity goal and feeling to doctor along with basic info and score
+        doctor_response = doctor.speak(basic_info, score, feeling, obesity_goal)
+        # print(doctor_response)
+        dialog_history.append({"turn": turn, "role": "Doctor", "content": doctor_response})
+        doctor_to_change, instruction, freeze_rounds = doctor.parse_role_content(doctor_response)
+        print(f"\n{Fore.CYAN}********* Doctor **************{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}Doctor's Instruction:{Style.RESET_ALL} {instruction}")
         resident.update(doctor_to_change)
+        resident.set_freeze(freeze_rounds)
     else:
         resident.update(to_change)
 
-    # 添加下一轮提示
     dialog_history.append({"turn": turn, "role": "assistant", "content": 'continue to report your basic information and change to make in the desired format.'})
     return dialog_history
+
+    
+def save_dialog_info(save_path, dialog_info):
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    try:
+        with jsonlines.open(save_path, "a") as f:
+            f.write(dialog_info)
+        print(f"{Fore.GREEN}Dialog information successfully saved to {save_path}{Style.RESET_ALL}")
+    except Exception as e:
+        print(f"{Fore.RED}Error saving dialog information: {e}{Style.RESET_ALL}")
 
 # 主程序
 if __name__ == "__main__":
     args = get_parser()
-    resident_profile = load_resident_profile('../data/obesity.json')
-    print(resident_profile)
+    resident_profile = load_resident_profile(args.resident_profile_path)
+    print(f"\n{Fore.GREEN}Resident Profile Loaded:{Style.RESET_ALL} {resident_profile}")
+    
     evaluator, doctor, resident = initialize_agents(args, resident_profile)
     
     dialog_history = [{"turn": 0, "role": "assistant", "content": 'A simulation start.'}]
     resident.memorize(("assistant", 'A new round start.'))
 
-    for turn in range(1, 2):  # 模拟三轮对话
+    for turn in range(1, 4):
         dialog_history = simulate_turn(dialog_history, turn, resident, evaluator, doctor)
+    
+    save_dialog_info(args.save_path,dialog_history)
 

@@ -7,9 +7,8 @@ import random
 class Doctor(Agent):
     def __init__(self, args):
         """
-        初始化 Doctor Agent。
+        Doctor Agent Initialization
         """
-        # 生成 system_message，提供基础的上下文信息
         self.system_message = (
             "You are a doctor specializing in obesity management. Your task is to evaluate the resident's obesity risk based on their provided basic information (as a string) "
             "and suggest interventions. The interventions should be directly actionable and specify changes to the resident's behavior, diet, or lifestyle. "
@@ -17,7 +16,7 @@ class Doctor(Agent):
             "When giving interventions, use clear and simple language suitable for a general audience.\n"
         )
 
-        # 添加 model_dict 的映射关系
+        # model_dict reflection
         self.model_dict = {
             'FAVC': ['yes', 'no'],
             'FCVC': [1, 2, 3],
@@ -31,7 +30,7 @@ class Doctor(Agent):
             'MTRANS': ['Public_Transportation', 'Walking', 'Automobile', 'Motorbike', 'Bike']
         }
 
-        # 初始化 GPT 引擎
+        # engine init
         engine = registry.get_class("Engine.GPT")(
             openai_api_key=args.doctor_openai_api_key,
             openai_api_base=args.doctor_openai_api_base,
@@ -55,22 +54,27 @@ class Doctor(Agent):
         parser.add_argument('--doctor_frequency_penalty', type=float, default=0, help='frequency penalty')
         parser.add_argument('--doctor_presence_penalty', type=float, default=0, help='presence penalty')
 
-    def speak(self, basic_info, score, save_to_memory=True):
+    def speak(self, basic_info, score, feeling, obesity_goal, save_to_memory=True):
         """
-        根据居民基本信息字符串和评估分数生成干预建议和解释。
+        give out intervention and reasons based on basic information and score.
         """
         if not isinstance(basic_info, str):
             raise ValueError("The 'basic_info' parameter must be a string.")
         if not isinstance(score, (int, float)):
             raise ValueError("The 'score' parameter must be a numeric value.")
 
-        # 调用 GPT 引擎生成干预建议和理由
+
         prompt = (
-            "You are a doctor specializing in obesity management. Based on the resident's basic information, "
-            "which is provided as a string, suggest JSON-structured intervention measures and explain the rationale for these interventions. "
-            "The interventions should specify exact changes to the resident's attributes, which can be directly implemented.\n\n"
+            "You are a doctor specializing in obesity management. Your role is to provide **personalized** intervention measures "
+            "based on the resident's basic information, obesity risk score, current feelings, and obesity goal. "
+            "Your suggestions should focus on **realistic, actionable changes** to a maximum of three attributes, prioritizing those "
+            "that have the greatest impact on the resident's health goal (e.g., weight reduction, weight maintenance, or weight gain).\n\n"
+            
             "Resident's Basic Information:\n{basic_info}\n\n"
+            "Resident's Current Feeling:\n{feeling}\n\n"
+            "Resident's Obesity Goal:\n{obesity_goal}\n\n"
             "Obesity Risk Score: {score}\n\n"
+            
             "The following are the possible values for each intervention field:\n"
             "{{\n"
             "  'FAVC': ['yes', 'no'],\n"
@@ -84,40 +88,57 @@ class Doctor(Agent):
             "  'CALC': ['no', 'Sometimes', 'Frequently', 'Always'],\n"
             "  'MTRANS': ['Public_Transportation', 'Walking', 'Automobile', 'Motorbike', 'Bike']\n"
             "}}\n\n"
+            
+            "When generating your response, please ensure:\n"
+            "1. Focus on no more than three key attributes for changes in each round.\n"
+            "2. Provide a rationale for each change, explaining how it aligns with the resident's obesity goal, current feelings, "
+            "and overall health improvement.\n"
+            "3. Include a 'freeze_rounds' field to indicate the number of rounds the resident should maintain the suggested changes before re-evaluation. "
+            "This field should be dynamically determined based on the difficulty and impact of the suggested changes, ranging from 1 to 5 rounds.\n\n"
+            
             "Your response must include the following fields in JSON format:\n"
             "{{\n"
             "  'intervention': {{'attribute_to_change': 'new_value', ...}},\n"
+            "  'freeze_rounds': <number_of_rounds>,\n"
             "  'rationale': '<explanation_for_the_interventions>'\n"
             "}}\n\n"
-            "Be sure to suggest realistic changes that are actionable based on the provided data."
-        ).format(basic_info=basic_info, score=score)
+            
+            "Example response:\n"
+            "{{\n"
+            "  'intervention': {{'FAVC': 'no', 'NCP': 3}},\n"
+            "  'freeze_rounds': 3,\n"
+            "  'rationale': 'Reducing the frequency of high-caloric food consumption and standardizing meal counts to 3 per day will help decrease overall calorie intake, supporting weight reduction. "
+            "This aligns with the resident's goal to lose weight and addresses their feeling of eating too many snacks.'\n"
+            "}}\n\n"
+            
+            "Be sure to propose realistic and personalized changes that reflect the resident's unique circumstances, feelings, and obesity goal."
+        ).format(basic_info=basic_info, feeling=feeling, obesity_goal=obesity_goal, score=score)
 
-        # 发送给 GPT 引擎
+
+
         response = self.engine.get_response([
             {"role": "system", "content": self.system_message},
             {"role": "user", "content": prompt}
         ])
 
-        # 存储到记忆
         if save_to_memory:
             self.memorize(("user", f"Basic Info: {basic_info}, Score: {score}"))
             self.memorize(("assistant", response))
 
-        # 解析响应并返回
         return response
+
 
     def parse_role_content(self, response):
         """
-        解析 GPT 的响应内容，将其转为结构化数据。
+        parse the GPT response and return
         """
-        print('--------response start---------------')
-        print(response)
-        print('--------response end---------------')
         try:
             response_dict = json.loads(response)
             intervention = response_dict.get("intervention", {})
             rationale = response_dict.get("rationale", "")
+            freeze_rounds = response_dict.get("freeze_rounds", 0)
         except json.JSONDecodeError:
             raise ValueError("The GPT response is not in the expected JSON format.")
-        
-        return intervention, rationale
+
+        return intervention, rationale, freeze_rounds
+

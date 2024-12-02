@@ -5,7 +5,7 @@ import json
 @register_class(alias="Agent.Evaluator.GPT")
 class Evaluator(Agent):
     def __init__(self, args):
-        # 调用 GPT 引擎初始化
+
         engine = registry.get_class("Engine.GPT")(
             openai_api_key=args.evaluator_openai_api_key,
             openai_api_base=args.evaluator_openai_api_base,
@@ -17,7 +17,6 @@ class Evaluator(Agent):
             presence_penalty=args.evaluator_presence_penalty
         )
         
-        # 系统初始消息
         self.system_message = (
             "You are a health evaluator specializing in assessing obesity risks. "
             "You will analyze a resident's basic information and provide a score, trend, description, "
@@ -39,12 +38,11 @@ class Evaluator(Agent):
 
     def speak(self, basic_info, save_to_memory=True):
         """
-        使用 GPT 分析居民的基本信息并生成评估。
+        evaluate resident basic information
         """
         if not isinstance(basic_info, str):
             raise ValueError("The 'basic_info' parameter must be a string.")
 
-        # 构建 GPT 提示
         prompt = (
             "Given the following resident's basic information, generate an evaluation. "
             "Your response must include the following fields:\n"
@@ -65,10 +63,8 @@ class Evaluator(Agent):
             "}}"
         ).format(basic_info=basic_info)
 
-        # 调用 GPT 引擎
         response = self.engine.get_response([{"role": "system", "content": prompt}])
         
-        # 存入记忆
         if save_to_memory:
             self.memorize(("user", f"Basic Info: {basic_info}"))
             self.memorize(("assistant", response))
@@ -77,7 +73,7 @@ class Evaluator(Agent):
 
     def parse_role_content(self, response):
         """
-        从 GPT 响应中提取评估结果。
+        parse and return
         """
         try:
             response_dict = json.loads(response)
