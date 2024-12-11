@@ -33,7 +33,7 @@ if __name__ == "__main__":
         resident = registry.get_class("Agent.Resident.GPT")(args, resident_profile=resident_profile)
         dialog_history = [{"role": "assistant", "content": 'A simulation start.'}]
         resident_response = resident.speak(dialog_history[-1]["role"], dialog_history[-1]["content"])
-        basic_info, _ = resident.parse_role_content(resident_response)
+        basic_info, _, _, _ = resident.parse_role_content(resident_response)
         evaluator_response = evaluator.speak(basic_info)
         score, _ ,description ,_ = evaluator.parse_role_content(evaluator_response)
         results.append({
