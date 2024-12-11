@@ -94,10 +94,8 @@ class Resident(Agent):
             raise ValueError("Response is empty or invalid!")
 
         try:
-            # 解析JSON格式的内容
             response_dict = json.loads(response)
             
-            # 提取 basic_information、obesity_goal、feeling 和 change 字段
             basic_info = response_dict.get("basic_information", "No basic information found.")
             obesity_goal = response_dict.get("obesity_goal", "No obesity goal specified.")
             feeling = response_dict.get("feeling", "No feelings reported.")
@@ -108,9 +106,6 @@ class Resident(Agent):
             obesity_goal = "No obesity goal specified."
             feeling = "No feelings reported."
             to_change_dict = {}
-            # 可选：打印错误信息以调试
-            # print(f"Error parsing JSON response: {e}")
-            # print(f"Response content: {response}")
 
         return basic_info, obesity_goal, feeling, to_change_dict
 
@@ -133,7 +128,6 @@ class Resident(Agent):
             print(f"{Fore.RED}Profile is frozen. No updates applied.{Style.RESET_ALL}")
             self.decrement_freeze()
 
-        # 在 prompt 中添加 obesity_goal 的说明
         self.basic_info = (
             "You are a virtual resident, with specific daily activities and personal information that may affect your obesity status.\n"
             "Your current basic information is, content in () is the abbreviation for each feature for your understanding, do not report them when you are told to report your basic information:\n"
@@ -143,7 +137,6 @@ class Resident(Agent):
             "You have the ability to change parts of your basic information each round. Use the values provided in `model_dict` to make these changes. Adjust between 1-3 pieces of personal information each round based on your obesity goal.\n"
         )
 
-        # 将 obesity_goal 的提示添加到 system_message
         self.system_message = (
             self.basic_info
             + "In each interaction, generate your current basic information completely in the first person, in one paragraph, "
