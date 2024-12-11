@@ -11,7 +11,7 @@ import os
 
 def load_resident_profile(filepath):
     with open(filepath, encoding='utf-8') as file:
-        return json.load(file)[235]
+        return json.load(file)[165]
 
 def initialize_agents(args, resident_profile):
     evaluator = registry.get_class("Agent.Evaluator.GPT")(args)
@@ -24,7 +24,7 @@ def simulate_turn(dialog_history, turn, resident, evaluator, doctor):
     
     # resident basic information
     resident_response = resident.speak(dialog_history[-1]["role"], dialog_history[-1]["content"])
-    print(resident_response)
+    # print(resident_response)
     dialog_history.append({"turn": turn, "role": "Resident", "content": resident_response})
     
     print(f"\n{Fore.CYAN}********* Resident **************{Style.RESET_ALL}")
@@ -49,16 +49,23 @@ def simulate_turn(dialog_history, turn, resident, evaluator, doctor):
         # Pass obesity goal and feeling to doctor along with basic info and score
         doctor_response = doctor.speak(basic_info, score, feeling, obesity_goal)
         # print(doctor_response)
-        dialog_history.append({"turn": turn, "role": "Doctor", "content": doctor_response})
+        dialog_history.append({
+            "turn": turn, 
+            "role": "Doctor", 
+            "content": doctor_response})
         doctor_to_change, instruction, freeze_rounds = doctor.parse_role_content(doctor_response)
         print(f"\n{Fore.CYAN}********* Doctor **************{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}Doctor's Instruction:{Style.RESET_ALL} {instruction}")
+        print(f"{Fore.YELLOW}Doctor's Instruction:{Style.RESET_ALL} {instruction}") 
+        resident.set_freeze(0)
         resident.update(doctor_to_change)
         resident.set_freeze(freeze_rounds)
     else:
         resident.update(to_change)
 
-    dialog_history.append({"turn": turn, "role": "assistant", "content": 'continue to report your basic information and change to make in the desired format.'})
+    dialog_history.append({
+        "turn": turn, 
+        "role": "assistant", 
+        "content": 'Please continue to provide all required fields in the specified JSON format, including "basic_information", "obesity_goal", "feeling", and "change". Ensure the response is valid JSON.'})
     return dialog_history
 
     
@@ -82,7 +89,7 @@ if __name__ == "__main__":
     dialog_history = [{"turn": 0, "role": "assistant", "content": 'A simulation start.'}]
     resident.memorize(("assistant", 'A new round start.'))
 
-    for turn in range(1, 4):
+    for turn in range(1, 11):
         dialog_history = simulate_turn(dialog_history, turn, resident, evaluator, doctor)
     
     save_dialog_info(args.save_path,dialog_history)

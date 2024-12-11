@@ -1,5 +1,5 @@
 from .base_agent import Agent
-from .doctor_gary import Doctor
+from .doctor import Doctor
 from .resident import Resident
 from .evaluator import Evaluator
 

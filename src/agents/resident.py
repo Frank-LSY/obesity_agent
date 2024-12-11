@@ -124,7 +124,7 @@ class Resident(Agent):
             print(f"{Fore.YELLOW}Freeze rounds remaining: {self.freeze_rounds}{Style.RESET_ALL}")
     
     def update(self, to_change_dict):
-        print(self.freeze_rounds)
+        # print(self.freeze_rounds)
         if self.freeze_rounds == 0:  # Apply updates only if not frozen
             for key, value in to_change_dict.items():
                 self.resident_profile[key] = value
@@ -146,23 +146,32 @@ class Resident(Agent):
         # 将 obesity_goal 的提示添加到 system_message
         self.system_message = (
             self.basic_info
-            + "In each interaction, generate your current basic information in the first person, in one paragraph, "
+            + "In each interaction, generate your current basic information completely in the first person, in one paragraph, "
             "and summarize your current obesity goal and feelings based on this information.\n"
-            "Your response format should include:\n"
-            # "- `<basic_information>` for basic information.\n"
-            # "- `<obesity_goal>` for your current obesity goal.\n"
-            # "- `<feeling>` for your summarized feelings.\n"
-            # "- `<change>` for the proposed changes (if any) in JSON format.\n\n"
-            "Your response must include the following fields in JSON format:\n"
-            "{{\n"
-            "  \"basic_information\": \"Your summarized basic information here...\",\n"
-            "  \"obesity_goal\": \"Your current obesity goal...\",\n"
-            "  \"feeling\": \"Your feelings about your current status...\",\n"
-            "  \"change\": {{\"attribute\": \"value\", ...}}\n"
-            "}}\n\n"
-            "Ensure your response is in valid JSON format with the specified fields.\n"
-            "If the format is incorrect or any required field is missing, it will be considered an invalid response.\n"
-            "You must provide all fields in the correct format and ensure that the JSON is valid.\n"
+            "{\n"
+                "  \"basic_information\": \"Your summarized basic information here...\",\n"
+                "  \"obesity_goal\": \"Your current obesity goal...\",\n"
+                "  \"feeling\": \"Your feelings about your current status...\",\n"
+                "  \"change\": {\n"
+                "    \"attribute\": \"value\",\n"
+                "    ... (other attributes to change, if any)\n"
+                "  }\n"
+                "}\n\n"
+                "Guidelines:\n"
+                "1. Ensure the response is a valid JSON object. Avoid using double braces like {{...}}.\n"
+                "2. Provide all specified fields (`basic_information`, `obesity_goal`, `feeling`, `change`).\n"
+                "3. Ensure `change` contains a dictionary with key-value pairs for proposed changes.\n\n"
+                "Example output:\n"
+                "{\n"
+                "  \"basic_information\": \"I am a 35-year-old male, weighing 90kg, with a height of 175cm.\",\n"
+                "  \"obesity_goal\": \"I want to lose weight and reduce my BMI.\",\n"
+                "  \"feeling\": \"I feel motivated but struggle with sticking to a routine.\",\n"
+                "  \"change\": {\n"
+                "    \"FAVC\": \"no\",\n"
+                "    \"NCP\": 3\n"
+                "  }\n"
+                "}\n\n"
+                "If your response does not meet the format, it will be rejected."
         )
 
         self.forget()
