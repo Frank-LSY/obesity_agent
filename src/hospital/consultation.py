@@ -15,6 +15,8 @@ class Consultation:
     @staticmethod
     def add_parser_args(parser: argparse.ArgumentParser):
         parser.add_argument("--resident_obesity_goal", default="Maintain", help="resident Obesity Goal")
+        parser.add_argument("--resident_type", default="normal", help="which type of resident to simulate")
+        parser.add_argument("--turn", default="4", help="how many rounds to go")
         parser.add_argument("--resident_profile_path", default="obesity.json", type=str)
         parser.add_argument("--patient_database", default="patients.json", type=str)
         parser.add_argument("--patient", default="Agent.Patient.GPT", help="registry name of patient agent")

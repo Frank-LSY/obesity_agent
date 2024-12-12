@@ -24,3 +24,12 @@ bash scripts/run.sh
 
 ## Get Statistical Figures
 open the `figure.ipynb` and run each cell.
+
+## Original Dataset Location
+
+```
+data/ObesityDataSet.csv
+```
+Or you can download the data from [Estimation of Obesity Levels Based On Eating Habits and Physical Condition](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition)
+
+[This paper](https://thescipub.com/pdf/jcssp.2019.67.77.pdf) described the dataset in detail.

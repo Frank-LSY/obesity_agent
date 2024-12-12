@@ -9,9 +9,15 @@ import jsonlines
 from colorama import Fore, Style
 import os
 
-def load_resident_profile(filepath):
+def load_resident_profile(resident_type,filepath):
     with open(filepath, encoding='utf-8') as file:
-        return json.load(file)[165]
+        f = json.load(file)
+        if resident_type=='normal':
+            return f[12]
+        if resident_type=='overweight':
+            return f[256]
+        if resident_type=='obesity':
+            return f[165]
 
 def initialize_agents(args, resident_profile):
     evaluator = registry.get_class("Agent.Evaluator.GPT")(args)
@@ -78,10 +84,10 @@ def save_dialog_info(save_path, dialog_info):
     except Exception as e:
         print(f"{Fore.RED}Error saving dialog information: {e}{Style.RESET_ALL}")
 
-# 主程序
+
 if __name__ == "__main__":
     args = get_parser()
-    resident_profile = load_resident_profile(args.resident_profile_path)
+    resident_profile = load_resident_profile(args.resident_type, args.resident_profile_path)
     print(f"\n{Fore.GREEN}Resident Profile Loaded:{Style.RESET_ALL} {resident_profile}")
     
     evaluator, doctor, resident = initialize_agents(args, resident_profile)
@@ -89,7 +95,7 @@ if __name__ == "__main__":
     dialog_history = [{"turn": 0, "role": "assistant", "content": 'A simulation start.'}]
     resident.memorize(("assistant", 'A new round start.'))
 
-    for turn in range(1, 11):
+    for turn in range(1, int(args.turn)):
         dialog_history = simulate_turn(dialog_history, turn, resident, evaluator, doctor)
     
     save_dialog_info(args.save_path,dialog_history)
